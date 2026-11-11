@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useTrades } from "./hooks/useTrades";
 import { useGoal }   from "./hooks/useGoal";
 import TradeForm       from "./components/TradeForm";
@@ -87,12 +86,6 @@ export default function Home() {
     );
   }
 
-  const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
-
   return (
     <div className="flex flex-col" style={{ height: "100dvh" }}>
 
@@ -151,17 +144,6 @@ export default function Home() {
               {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
             </p>
           </div>
-          {/* Sign out */}
-          <button
-            onClick={handleSignOut}
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--card-2)", border: "1px solid var(--border)" }}
-            title="Sign out"
-          >
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="var(--muted)" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-            </svg>
-          </button>
         </div>
       </header>
 

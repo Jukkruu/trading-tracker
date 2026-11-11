@@ -8,28 +8,15 @@ export function useGoal() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("goals")
-      .select("amount")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setGoalState(data.amount);
-      });
+    supabase.from("goals").select("amount").maybeSingle().then(({ data }) => {
+      if (data) setGoalState(data.amount);
+    });
   }, []);
 
   const setGoal = useCallback(async (amount: number) => {
     const supabase = createClient();
-    setGoalState(amount); // optimistic
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    await supabase
-      .from("goals")
-      .upsert({ user_id: user.id, amount, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    setGoalState(amount);
+    await supabase.from("goals").upsert({ singleton: true, amount, updated_at: new Date().toISOString() }, { onConflict: "singleton" });
   }, []);
 
   return { goal, setGoal };
