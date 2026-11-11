@@ -8,7 +8,6 @@ interface Props {
 }
 
 export default function TradeLog({ trades, onDelete }: Props) {
-
   if (trades.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -28,21 +27,19 @@ export default function TradeLog({ trades, onDelete }: Props) {
     );
   }
 
-  const closed = trades.filter((t) => t.status === "closed");
-  const open   = trades.filter((t) => t.status === "open");
+  const wins   = trades.filter((t) => (t.pnl ?? 0) > 0).length;
+  const losses = trades.filter((t) => (t.pnl ?? 0) < 0).length;
 
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold uppercase tracking-widest px-1" style={{ color: "var(--muted)" }}>
-        {trades.length} trades · {closed.length} closed · {open.length} open
+        {trades.length} trades · {wins} wins · {losses} losses
       </p>
 
       {trades.map((t) => {
-        const long    = t.direction === "long";
-        const isOpen  = t.status === "open";
-        const pnl     = t.pnl ?? 0;
-        const hasP    = t.pnl != null;
-        const side    = long
+        const long = t.direction === "long";
+        const pnl  = t.pnl ?? 0;
+        const side = long
           ? { color: "var(--green)", dim: "var(--green-dim)", label: "▲ BUY" }
           : { color: "var(--red)",   dim: "var(--red-dim)",   label: "▼ SELL" };
 
@@ -53,10 +50,9 @@ export default function TradeLog({ trades, onDelete }: Props) {
             style={{
               background: "var(--card)",
               border:     "1px solid var(--border)",
-              borderLeft: `3px solid ${side.color}`,
+              borderLeft: `3px solid ${pnl > 0 ? "var(--green)" : pnl < 0 ? "var(--red)" : side.color}`,
             }}
           >
-            {/* Top accent */}
             <div style={{ height: "1px", background: `linear-gradient(90deg, ${side.color}33, transparent)` }} />
 
             {/* Header */}
@@ -69,30 +65,24 @@ export default function TradeLog({ trades, onDelete }: Props) {
                 <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>{t.date}</span>
               </div>
               <span
-                className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                style={isOpen
-                  ? { background: "rgba(96,165,250,0.1)", color: "#7cb4ff" }
-                  : { background: "rgba(106,96,128,0.15)", color: "var(--muted)" }}
+                className="text-base font-black"
+                style={{
+                  color: pnl > 0 ? "var(--green)" : pnl < 0 ? "var(--red)" : "var(--muted)",
+                  textShadow: pnl > 0 ? "0 0 12px var(--green-glow)" : pnl < 0 ? "0 0 12px var(--red-glow)" : "none",
+                }}
               >
-                {isOpen ? "● Open" : "✓ Closed"}
+                {pnl > 0 ? "+" : ""}${pnl.toFixed(2)}
               </span>
             </div>
 
-            {/* Price + P&L grid */}
-            <div className="grid grid-cols-4 px-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
+            {/* Price grid */}
+            <div className="grid grid-cols-3 px-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <Cell label="Entry" value={`$${t.entryPrice.toFixed(2)}`} />
               <Cell label="Exit"  value={t.exitPrice ? `$${t.exitPrice.toFixed(2)}` : "—"} />
               <Cell label="Lots"  value={`${t.lotSize}`} />
-              <Cell
-                label="P&L"
-                value={hasP ? `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)}` : "—"}
-                color={hasP ? (pnl >= 0 ? "var(--green)" : "var(--red)") : undefined}
-                glow={hasP}
-                bold
-              />
             </div>
 
-            {/* Delete row */}
+            {/* Delete */}
             <div className="px-3 py-2.5">
               <button
                 onClick={() => onDelete(t.id)}
@@ -116,23 +106,11 @@ export default function TradeLog({ trades, onDelete }: Props) {
   );
 }
 
-function Cell({ label, value, color, bold, glow }: {
-  label: string; value: string; color?: string; bold?: boolean; glow?: boolean;
-}) {
+function Cell({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs mb-0.5" style={{ color: "var(--muted)" }}>{label}</p>
-      <p
-        className={bold ? "text-sm font-black" : "text-sm font-semibold"}
-        style={{
-          color: color ?? "var(--text)",
-          textShadow: glow && color
-            ? color.includes("green") ? "0 0 10px var(--green-glow)" : "0 0 10px var(--red-glow)"
-            : "none",
-        }}
-      >
-        {value}
-      </p>
+      <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{value}</p>
     </div>
   );
 }

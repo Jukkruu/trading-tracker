@@ -24,14 +24,13 @@ function toTrade(r: Row): Trade {
 
 function toRow(t: Omit<Trade, "id">) {
   return {
-    date:         t.date,
-    direction:    t.direction,
-    entry_price:  t.entryPrice,
-    lot_size:     t.lotSize,
-    stop_loss:    t.stopLoss    ?? null,
-    take_profit:  t.takeProfit  ?? null,
-    status:       t.status,
-    notes:        t.notes       ?? null,
+    date:        t.date,
+    direction:   t.direction,
+    entry_price: t.entryPrice,
+    exit_price:  t.exitPrice  ?? null,
+    lot_size:    t.lotSize,
+    pnl:         t.pnl        ?? null,
+    status:      t.status,
   };
 }
 
@@ -78,10 +77,13 @@ export function useTrades() {
     });
   }, []);
 
-  const deleteTrade = useCallback((id: string) => {
+  const deleteTrade = useCallback(async (id: string) => {
     const supabase = createClient();
     setTrades((prev) => prev.filter((t) => t.id !== id));
-    supabase.from("trades").delete().eq("id", id);
+    const { error } = await supabase.from("trades").delete().eq("id", id);
+    if (error) {
+      console.error("Delete failed:", error.message);
+    }
   }, []);
 
   return { trades, loading, addTrade, closeTrade, deleteTrade };
