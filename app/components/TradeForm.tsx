@@ -18,17 +18,17 @@ export default function TradeForm({ onAdd, onClose }: Props) {
   const exit  = parseFloat(exitPrice);
   const lots  = parseFloat(lotSize);
 
-  const pipsPreview = !isNaN(entry) && !isNaN(exit)
-    ? direction === "long" ? (exit - entry) / 0.01 : (entry - exit) / 0.01
+  const diff = !isNaN(entry) && !isNaN(exit)
+    ? direction === "long" ? (exit - entry) : (entry - exit)
     : null;
-  const pnlPreview = pipsPreview !== null && !isNaN(lots)
-    ? pipsPreview * 10 * lots
+  const pnlPreview = diff !== null && !isNaN(lots)
+    ? diff * 100 * lots
     : null;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const pips = direction === "long" ? (exit - entry) / 0.01 : (entry - exit) / 0.01;
-    const pnl  = parseFloat((pips * 100 * lots).toFixed(2));
+    const d   = direction === "long" ? (exit - entry) : (entry - exit);
+    const pnl = parseFloat((d * 100 * lots).toFixed(2));
     onAdd({
       date:       new Date().toISOString().slice(0, 10),
       direction,

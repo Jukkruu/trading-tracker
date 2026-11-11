@@ -65,11 +65,10 @@ export function useTrades() {
     setTrades((prev) => {
       const trade = prev.find((t) => t.id === id);
       if (!trade) return prev;
-      const pips =
-        trade.direction === "long"
-          ? (exitPrice - trade.entryPrice) / 0.01
-          : (trade.entryPrice - exitPrice) / 0.01;
-      const pnl = parseFloat((pips * 100 * trade.lotSize).toFixed(2));
+      const d = trade.direction === "long"
+        ? (exitPrice - trade.entryPrice)
+        : (trade.entryPrice - exitPrice);
+      const pnl = parseFloat((d * 100 * trade.lotSize).toFixed(2));
       supabase.from("trades").update({ exit_price: exitPrice, pnl, status: "closed" }).eq("id", id);
       return prev.map((t) =>
         t.id === id ? { ...t, exitPrice, pnl, status: "closed" as const } : t
