@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTrades } from "./hooks/useTrades";
 import { useGoal }   from "./hooks/useGoal";
@@ -16,14 +16,14 @@ import { Trade }       from "./types";
 type Tab = "portfolio" | "log" | "calendar" | "stats";
 
 /* ── Streak: consecutive profitable days ending today ── */
-function calcStreak(trades: Trade[]): number {
+function calcStreak(trades: Trade[], today: Date): number {
   const pnlByDay: Record<string, number> = {};
   trades.forEach((t) => {
     if (t.status === "closed" && t.pnl != null)
       pnlByDay[t.date] = (pnlByDay[t.date] ?? 0) + t.pnl;
   });
   let streak = 0;
-  const d = new Date();
+  const d = new Date(today);
   for (let i = 0; i < 365; i++) {
     const key = d.toISOString().slice(0, 10);
     if ((pnlByDay[key] ?? 0) > 0) { streak++; d.setDate(d.getDate() - 1); }
@@ -38,16 +38,19 @@ export default function Home() {
   const [tab, setTab]     = useState<Tab>("portfolio");
   const [showForm, setShowForm]       = useState(false);
   const [closingTrade, setClosingTrade] = useState<Trade | null>(null);
+  const [today, setToday] = useState<Date | null>(null);
+
+  useEffect(() => { setToday(new Date()); }, []);
 
   const closed   = trades.filter((t) => t.status === "closed" && t.pnl != null);
   const openCount = trades.filter((t) => t.status === "open").length;
   const totalPnl  = closed.reduce((s, t) => s + (t.pnl ?? 0), 0);
   const wins      = closed.filter((t) => (t.pnl ?? 0) > 0).length;
   const winRate   = closed.length > 0 ? (wins / closed.length) * 100 : 0;
-  const streak    = useMemo(() => calcStreak(trades), [trades]);
+  const streak    = useMemo(() => today ? calcStreak(trades, today) : 0, [trades, today]);
 
   /* Current month P&L (for goal) */
-  const monthPrefix = new Date().toISOString().slice(0, 7);
+  const monthPrefix = today ? today.toISOString().slice(0, 7) : "";
   const monthPnl    = closed
     .filter((t) => t.date.startsWith(monthPrefix))
     .reduce((s, t) => s + (t.pnl ?? 0), 0);
