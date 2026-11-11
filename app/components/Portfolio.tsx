@@ -4,11 +4,10 @@ import { Trade } from "../types";
 
 interface Props {
   trades: Trade[];
-  onCloseTrade: (trade: Trade) => void;
   onDelete: (id: string) => void;
 }
 
-export default function Portfolio({ trades, onCloseTrade, onDelete }: Props) {
+export default function Portfolio({ trades, onDelete }: Props) {
   const open = trades.filter((t) => t.status === "open");
 
   if (open.length === 0) {
@@ -35,14 +34,13 @@ export default function Portfolio({ trades, onCloseTrade, onDelete }: Props) {
   return (
     <div className="space-y-3">
       <SectionLabel text={`${open.length} open position${open.length !== 1 ? "s" : ""}`} />
-      {open.map((t) => <PositionCard key={t.id} trade={t} onClose={onCloseTrade} onDelete={onDelete} />)}
+      {open.map((t) => <PositionCard key={t.id} trade={t} onDelete={onDelete} />)}
     </div>
   );
 }
 
-function PositionCard({ trade: t, onClose, onDelete }: {
+function PositionCard({ trade: t, onDelete }: {
   trade: Trade;
-  onClose: (t: Trade) => void;
   onDelete: (id: string) => void;
 }) {
   const long = t.direction === "long";
@@ -108,20 +106,10 @@ function PositionCard({ trade: t, onClose, onDelete }: {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2.5 p-3">
-        <button
-          onClick={() => onClose(t)}
-          className="flex-1 py-3 rounded-xl text-sm font-black text-black"
-          style={{
-            background: "linear-gradient(135deg, var(--gold-hi), var(--gold))",
-            boxShadow:  "0 2px 10px var(--gold-glow)",
-          }}
-        >
-          Close Position
-        </button>
+      <div className="flex justify-end px-3 pb-3">
         <button
           onClick={() => onDelete(t.id)}
-          className="w-12 h-12 rounded-xl flex items-center justify-center"
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{ background: "var(--red-dim)", color: "var(--red)", border: "1px solid rgba(255,82,97,0.2)" }}
         >
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

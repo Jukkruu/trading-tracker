@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useTrades } from "./hooks/useTrades";
+import { Trade }     from "./types";
 import { useGoal }   from "./hooks/useGoal";
 import TradeForm       from "./components/TradeForm";
 import TradeLog        from "./components/TradeLog";
@@ -9,8 +10,6 @@ import Portfolio       from "./components/Portfolio";
 import Stats           from "./components/Stats";
 import CalendarView    from "./components/CalendarView";
 import GoalCard        from "./components/GoalCard";
-import CloseTradeModal from "./components/CloseTradeModal";
-import { Trade }       from "./types";
 
 type Tab = "portfolio" | "log" | "calendar" | "stats";
 
@@ -32,11 +31,10 @@ function calcStreak(trades: Trade[], today: Date): number {
 }
 
 export default function Home() {
-  const { trades, loading, addTrade, closeTrade, deleteTrade } = useTrades();
+  const { trades, loading, addTrade, deleteTrade } = useTrades();
   const { goal, setGoal } = useGoal();
   const [tab, setTab]     = useState<Tab>("portfolio");
-  const [showForm, setShowForm]       = useState(false);
-  const [closingTrade, setClosingTrade] = useState<Trade | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [today, setToday] = useState<Date | null>(null);
 
   useEffect(() => { setToday(new Date()); }, []);
@@ -157,10 +155,10 @@ export default function Home() {
           )}
 
           {tab === "portfolio" && (
-            <Portfolio trades={trades} onCloseTrade={setClosingTrade} onDelete={deleteTrade} />
+            <Portfolio trades={trades} onDelete={deleteTrade} />
           )}
           {tab === "log" && (
-            <TradeLog trades={trades} onDelete={deleteTrade} onCloseTrade={setClosingTrade} />
+            <TradeLog trades={trades} onDelete={deleteTrade} />
           )}
           {tab === "calendar" && <CalendarView trades={trades} />}
           {tab === "stats"     && <Stats trades={trades} winRate={winRate} streak={streak} />}
@@ -212,15 +210,7 @@ export default function Home() {
         />
       </nav>
 
-      {/* Modals */}
       {showForm && <TradeForm onAdd={addTrade} onClose={() => setShowForm(false)} />}
-      {closingTrade && (
-        <CloseTradeModal
-          trade={closingTrade}
-          onClose={(p) => { closeTrade(closingTrade.id, p); setClosingTrade(null); }}
-          onCancel={() => setClosingTrade(null)}
-        />
-      )}
     </div>
   );
 }
