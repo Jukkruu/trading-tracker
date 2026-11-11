@@ -1,26 +1,123 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm dark palette — gold-trading themed */
+  --bg:          #09080e;
+  --card:        #110f1b;
+  --card-2:      #19172a;
+  --border:      rgba(220, 165, 60, 0.11);
+  --border-hi:   rgba(220, 165, 60, 0.26);
+
+  /* Accents */
+  --gold:        #dcaa3c;
+  --gold-hi:     #f5c842;
+  --gold-dim:    rgba(220, 165, 60, 0.15);
+  --gold-glow:   rgba(220, 165, 60, 0.35);
+
+  --green:       #0dd9a8;
+  --green-dim:   rgba(13, 217, 168, 0.12);
+  --green-glow:  rgba(13, 217, 168, 0.3);
+
+  --red:         #ff5261;
+  --red-dim:     rgba(255, 82, 97, 0.12);
+  --red-glow:    rgba(255, 82, 97, 0.3);
+
+  /* Typography */
+  --text:        #ede8f8;
+  --muted:       #6a6080;
+  --faint:       rgba(237, 232, 248, 0.04);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Reset ─────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
+html, body { height: 100%; overscroll-behavior: none; }
+
+/* ── Body: warm dark + dot grid + radial glow ── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-y: scroll;
+
+  /* Layered: radial amber glow at top + dot grid */
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 90% 45% at 50% -8%, rgba(220,165,60,0.07) 0%, transparent 70%),
+    radial-gradient(circle at 1.5px 1.5px, rgba(220,165,60,0.055) 1.5px, transparent 0);
+  background-size: auto, 28px 28px;
 }
+
+/* ── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* ── Inputs ─────────────────────────────────── */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.45) sepia(0.3);
+  cursor: pointer;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* ── Shared card base ────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.card-2 {
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+/* ── Top accent line on "hero" cards ─────────── */
+.accent-top::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.5;
+  margin-bottom: -1px;
+}
+
+/* ── Glow helpers ───────────────────────────── */
+.glow-gold { text-shadow: 0 0 24px var(--gold-glow); }
+.glow-green { text-shadow: 0 0 20px var(--green-glow); }
+.glow-red   { text-shadow: 0 0 20px var(--red-glow);   }
+
+/* ── Sheet / modal animations ───────────────── */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.sheet-enter { animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.backdrop-enter { animation: fadeIn 0.18s ease forwards; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50%       { opacity: 1;   transform: scale(1.1); }
+}
+
+/* ── Press feedback ─────────────────────────── */
+button:active { opacity: 0.72; transform: scale(0.96); }
