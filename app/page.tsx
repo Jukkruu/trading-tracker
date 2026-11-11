@@ -6,12 +6,11 @@ import { Trade }     from "./types";
 import { useGoal }   from "./hooks/useGoal";
 import TradeForm       from "./components/TradeForm";
 import TradeLog        from "./components/TradeLog";
-import Portfolio       from "./components/Portfolio";
 import Stats           from "./components/Stats";
 import CalendarView    from "./components/CalendarView";
 import GoalCard        from "./components/GoalCard";
 
-type Tab = "portfolio" | "log" | "calendar" | "stats";
+type Tab = "log" | "calendar" | "stats";
 
 /* ── Streak: consecutive profitable days ending today ── */
 function calcStreak(trades: Trade[], today: Date): number {
@@ -33,14 +32,13 @@ function calcStreak(trades: Trade[], today: Date): number {
 export default function Home() {
   const { trades, loading, addTrade, deleteTrade } = useTrades();
   const { goal, setGoal } = useGoal();
-  const [tab, setTab]     = useState<Tab>("portfolio");
+  const [tab, setTab]     = useState<Tab>("log");
   const [showForm, setShowForm] = useState(false);
   const [today, setToday] = useState<Date | null>(null);
 
   useEffect(() => { setToday(new Date()); }, []);
 
   const closed   = trades.filter((t) => t.status === "closed" && t.pnl != null);
-  const openCount = trades.filter((t) => t.status === "open").length;
   const totalPnl  = closed.reduce((s, t) => s + (t.pnl ?? 0), 0);
   const wins      = closed.filter((t) => (t.pnl ?? 0) > 0).length;
   const winRate   = closed.length > 0 ? (wins / closed.length) * 100 : 0;
@@ -149,14 +147,10 @@ export default function Home() {
       <main className="flex-1 overflow-y-auto" style={{ paddingBottom: "80px" }}>
         <div className="px-4 pt-4 space-y-4">
 
-          {/* Goal card — only on portfolio & calendar tabs */}
-          {(tab === "portfolio" || tab === "calendar") && (
+          {tab === "calendar" && (
             <GoalCard goal={goal} currentPnl={monthPnl} onSetGoal={setGoal} />
           )}
 
-          {tab === "portfolio" && (
-            <Portfolio trades={trades} onDelete={deleteTrade} />
-          )}
           {tab === "log" && (
             <TradeLog trades={trades} onDelete={deleteTrade} />
           )}
@@ -176,10 +170,6 @@ export default function Home() {
           height:        "calc(62px + env(safe-area-inset-bottom))",
         }}
       >
-        <NavBtn active={tab === "portfolio"} onClick={() => setTab("portfolio")} label="Portfolio"
-          badge={openCount > 0 ? openCount : undefined}
-          icon={<BarChartIcon />}
-        />
         <NavBtn active={tab === "log"} onClick={() => setTab("log")} label="Log"
           badge={trades.length > 0 ? trades.length : undefined}
           icon={<ListIcon />}
@@ -246,11 +236,6 @@ function NavBtn({ active, onClick, icon, label, badge }: {
 }
 
 /* ─────────── Icons ─────────── */
-const BarChartIcon = () => (
-  <svg width="21" height="21" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-  </svg>
-);
 const ListIcon = () => (
   <svg width="21" height="21" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
