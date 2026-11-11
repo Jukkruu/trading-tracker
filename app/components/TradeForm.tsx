@@ -9,29 +9,36 @@ interface Props {
 }
 
 export default function TradeForm({ onAdd, onClose }: Props) {
-  const [form, setForm] = useState({
-    date: new Date().toISOString().slice(0, 10),
-    direction: "long" as Direction,
-    entryPrice: "",
-    lotSize: "",
-    stopLoss: "",
-    takeProfit: "",
-    notes: "",
-  });
-
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [direction, setDirection] = useState<Direction>("long");
+  const [entryPrice, setEntryPrice] = useState("");
+  const [exitPrice,  setExitPrice]  = useState("");
+  const [lotSize,    setLotSize]    = useState("");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const entry = parseFloat(entryPrice);
+    const lots  = parseFloat(lotSize);
+    const exit  = exitPrice ? parseFloat(exitPrice) : undefined;
+
+    let pnl: number | undefined;
+    let status: Trade["status"] = "open";
+
+    if (exit !== undefined) {
+      const pips = direction === "long"
+        ? (exit - entry) / 0.01
+        : (entry - exit) / 0.01;
+      pnl = parseFloat((pips * 10 * lots).toFixed(2));
+      status = "closed";
+    }
+
     onAdd({
-      date: form.date,
-      direction: form.direction,
-      entryPrice: parseFloat(form.entryPrice),
-      lotSize: parseFloat(form.lotSize),
-      stopLoss:   form.stopLoss   ? parseFloat(form.stopLoss)   : undefined,
-      takeProfit: form.takeProfit ? parseFloat(form.takeProfit) : undefined,
-      notes: form.notes || undefined,
-      status: "open",
+      date: new Date().toISOString().slice(0, 10),
+      direction,
+      entryPrice: entry,
+      exitPrice: exit,
+      lotSize: lots,
+      pnl,
+      status,
     });
     onClose();
   };
@@ -47,8 +54,6 @@ export default function TradeForm({ onAdd, onClose }: Props) {
         style={{
           background: "var(--card)",
           borderTop: "1px solid var(--border-hi)",
-          maxHeight: "92dvh",
-          display: "flex", flexDirection: "column",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
@@ -56,12 +61,12 @@ export default function TradeForm({ onAdd, onClose }: Props) {
         <div style={{ height: "1px", background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />
 
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
+        <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3">
           <div>
             <h2 className="font-black text-base text-white">New Trade</h2>
             <p className="text-xs" style={{ color: "var(--muted)" }}>XAU / USD · Gold</p>
@@ -75,73 +80,58 @@ export default function TradeForm({ onAdd, onClose }: Props) {
           </button>
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto flex-1">
-          <form onSubmit={submit} className="px-5 pb-6 space-y-4">
+        {/* Form */}
+        <form onSubmit={submit} className="px-5 pb-6 space-y-4">
 
-            {/* Direction toggle */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl"
-              style={{ background: "var(--card-2, #19172a)", border: "1px solid var(--border)" }}>
-              {(["long", "short"] as Direction[]).map((dir) => {
-                const active = form.direction === dir;
-                return (
-                  <button key={dir} type="button" onClick={() => set("direction", dir)}
-                    className="py-3.5 rounded-xl text-sm font-black transition-all"
-                    style={active ? {
-                      background: dir === "long" ? "var(--green-dim)" : "var(--red-dim)",
-                      color:      dir === "long" ? "var(--green)"     : "var(--red)",
-                      border:     `1px solid ${dir === "long" ? "rgba(13,217,168,0.3)" : "rgba(255,82,97,0.3)"}`,
-                      boxShadow:  `0 0 10px ${dir === "long" ? "var(--green-glow)" : "var(--red-glow)"}`,
-                    } : { color: "var(--muted)", border: "1px solid transparent" }}
-                  >
-                    {dir === "long" ? "▲  Long  (Buy)" : "▼  Short  (Sell)"}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Direction toggle */}
+          <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl"
+            style={{ background: "var(--card-2, #19172a)", border: "1px solid var(--border)" }}>
+            {(["long", "short"] as Direction[]).map((dir) => {
+              const active = direction === dir;
+              return (
+                <button key={dir} type="button" onClick={() => setDirection(dir)}
+                  className="py-3.5 rounded-xl text-sm font-black transition-all"
+                  style={active ? {
+                    background: dir === "long" ? "var(--green-dim)" : "var(--red-dim)",
+                    color:      dir === "long" ? "var(--green)"     : "var(--red)",
+                    border:     `1px solid ${dir === "long" ? "rgba(13,217,168,0.3)" : "rgba(255,82,97,0.3)"}`,
+                    boxShadow:  `0 0 10px ${dir === "long" ? "var(--green-glow)" : "var(--red-glow)"}`,
+                  } : { color: "var(--muted)", border: "1px solid transparent" }}
+                >
+                  {dir === "long" ? "▲  Buy" : "▼  Sell"}
+                </button>
+              );
+            })}
+          </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Entry Price ($)">
-                <input type="number" inputMode="decimal" step="0.01" value={form.entryPrice}
-                  onChange={(e) => set("entryPrice", e.target.value)} placeholder="2650.00" required />
-              </Field>
-              <Field label="Date">
-                <input type="date" value={form.date}
-                  onChange={(e) => set("date", e.target.value)} required />
-              </Field>
-            </div>
-
-            <Field label="Lot Size">
-              <input type="number" inputMode="decimal" step="0.01" value={form.lotSize}
-                onChange={(e) => set("lotSize", e.target.value)} placeholder="0.10" required />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Entry Price ($)">
+              <input type="number" inputMode="decimal" step="0.01"
+                value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)}
+                placeholder="2650.00" required />
             </Field>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Stop Loss ($)">
-                <input type="number" inputMode="decimal" step="0.01" value={form.stopLoss}
-                  onChange={(e) => set("stopLoss", e.target.value)} placeholder="Optional" />
-              </Field>
-              <Field label="Take Profit ($)">
-                <input type="number" inputMode="decimal" step="0.01" value={form.takeProfit}
-                  onChange={(e) => set("takeProfit", e.target.value)} placeholder="Optional" />
-              </Field>
-            </div>
-
-            <Field label="Notes (optional)">
-              <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)}
-                placeholder="Setup, reason, mindset..." rows={2} style={{ resize: "none" }} />
+            <Field label="Exit Price ($)">
+              <input type="number" inputMode="decimal" step="0.01"
+                value={exitPrice} onChange={(e) => setExitPrice(e.target.value)}
+                placeholder="Optional" />
             </Field>
+          </div>
 
-            <button type="submit"
-              className="w-full py-4 rounded-2xl text-base font-black text-black"
-              style={{
-                background: "linear-gradient(135deg, var(--gold-hi), var(--gold))",
-                boxShadow:  "0 4px 20px var(--gold-glow)",
-              }}>
-              Add Trade
-            </button>
-          </form>
-        </div>
+          <Field label="Lot Size">
+            <input type="number" inputMode="decimal" step="0.01"
+              value={lotSize} onChange={(e) => setLotSize(e.target.value)}
+              placeholder="0.10" required />
+          </Field>
+
+          <button type="submit"
+            className="w-full py-4 rounded-2xl text-base font-black text-black"
+            style={{
+              background: "linear-gradient(135deg, var(--gold-hi), var(--gold))",
+              boxShadow:  "0 4px 20px var(--gold-glow)",
+            }}>
+            {exitPrice ? "Add & Close Trade" : "Add Trade"}
+          </button>
+        </form>
       </div>
     </>
   );
