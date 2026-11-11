@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Trade } from "../types";
 
 interface Props {
@@ -8,6 +9,24 @@ interface Props {
 }
 
 export default function TradeLog({ trades, onDelete }: Props) {
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  /* Auto-cancel confirm after 3 s */
+  useEffect(() => {
+    if (!confirmId) return;
+    const t = setTimeout(() => setConfirmId(null), 3000);
+    return () => clearTimeout(t);
+  }, [confirmId]);
+
+  const handleDelete = (id: string) => {
+    if (confirmId === id) {
+      onDelete(id);
+      setConfirmId(null);
+    } else {
+      setConfirmId(id);
+    }
+  };
+
   if (trades.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -27,11 +46,13 @@ export default function TradeLog({ trades, onDelete }: Props) {
     );
   }
 
+  const closed = trades.filter((t) => t.status === "closed");
+  const open   = trades.filter((t) => t.status === "open");
+
   return (
     <div className="space-y-3">
-      {/* Summary row */}
       <p className="text-xs font-semibold uppercase tracking-widest px-1" style={{ color: "var(--muted)" }}>
-        {trades.length} trades · {trades.filter((t) => t.status === "open").length} open · {trades.filter((t) => t.status === "closed").length} closed
+        {trades.length} trades · {closed.length} closed · {open.length} open
       </p>
 
       {trades.map((t) => {
@@ -39,9 +60,10 @@ export default function TradeLog({ trades, onDelete }: Props) {
         const isOpen  = t.status === "open";
         const pnl     = t.pnl ?? 0;
         const hasP    = t.pnl !== undefined;
+        const confirming = confirmId === t.id;
         const side    = long
-          ? { color: "var(--green)", dim: "var(--green-dim)", label: "▲ LONG" }
-          : { color: "var(--red)",   dim: "var(--red-dim)",   label: "▼ SHORT" };
+          ? { color: "var(--green)", dim: "var(--green-dim)", label: "▲ BUY" }
+          : { color: "var(--red)",   dim: "var(--red-dim)",   label: "▼ SELL" };
 
         return (
           <div
@@ -49,8 +71,9 @@ export default function TradeLog({ trades, onDelete }: Props) {
             className="rounded-2xl overflow-hidden"
             style={{
               background: "var(--card)",
-              border:     "1px solid var(--border)",
+              border:     `1px solid ${confirming ? "rgba(255,82,97,0.35)" : "var(--border)"}`,
               borderLeft: `3px solid ${side.color}`,
+              transition: "border-color 0.2s",
             }}
           >
             {/* Top accent */}
@@ -75,7 +98,7 @@ export default function TradeLog({ trades, onDelete }: Props) {
               </span>
             </div>
 
-            {/* Price + P&L row */}
+            {/* Price + P&L grid */}
             <div className="grid grid-cols-4 px-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <Cell label="Entry" value={`$${t.entryPrice.toFixed(2)}`} />
               <Cell label="Exit"  value={t.exitPrice ? `$${t.exitPrice.toFixed(2)}` : "—"} />
@@ -89,19 +112,25 @@ export default function TradeLog({ trades, onDelete }: Props) {
               />
             </div>
 
-            {/* Notes + actions */}
-            <div className="flex items-center justify-between px-4 py-2.5">
-              {t.notes
-                ? <p className="text-xs flex-1 mr-3 truncate" style={{ color: "var(--muted)" }}>
-                    <span style={{ color: "var(--gold)", fontWeight: 700 }}>Note · </span>{t.notes}
-                  </p>
-                : <span />
-              }
-              <button onClick={() => onDelete(t.id)} className="p-1.5 rounded-lg shrink-0"
-                style={{ color: "var(--muted)" }}>
+            {/* Delete row */}
+            <div className="px-3 py-2.5">
+              <button
+                onClick={() => handleDelete(t.id)}
+                className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                style={confirming ? {
+                  background: "var(--red-dim)",
+                  color: "var(--red)",
+                  border: "1px solid rgba(255,82,97,0.35)",
+                } : {
+                  background: "rgba(255,255,255,0.04)",
+                  color: "var(--muted)",
+                  border: "1px solid var(--border)",
+                }}
+              >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
+                {confirming ? "Tap again to confirm delete" : "Delete"}
               </button>
             </div>
           </div>
