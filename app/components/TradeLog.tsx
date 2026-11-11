@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Trade } from "../types";
 
 interface Props {
@@ -9,23 +8,6 @@ interface Props {
 }
 
 export default function TradeLog({ trades, onDelete }: Props) {
-  const [confirmId, setConfirmId] = useState<string | null>(null);
-
-  /* Auto-cancel confirm after 3 s */
-  useEffect(() => {
-    if (!confirmId) return;
-    const t = setTimeout(() => setConfirmId(null), 3000);
-    return () => clearTimeout(t);
-  }, [confirmId]);
-
-  const handleDelete = (id: string) => {
-    if (confirmId === id) {
-      onDelete(id);
-      setConfirmId(null);
-    } else {
-      setConfirmId(id);
-    }
-  };
 
   if (trades.length === 0) {
     return (
@@ -59,8 +41,7 @@ export default function TradeLog({ trades, onDelete }: Props) {
         const long    = t.direction === "long";
         const isOpen  = t.status === "open";
         const pnl     = t.pnl ?? 0;
-        const hasP    = t.pnl !== undefined;
-        const confirming = confirmId === t.id;
+        const hasP    = t.pnl != null;
         const side    = long
           ? { color: "var(--green)", dim: "var(--green-dim)", label: "▲ BUY" }
           : { color: "var(--red)",   dim: "var(--red-dim)",   label: "▼ SELL" };
@@ -71,9 +52,8 @@ export default function TradeLog({ trades, onDelete }: Props) {
             className="rounded-2xl overflow-hidden"
             style={{
               background: "var(--card)",
-              border:     `1px solid ${confirming ? "rgba(255,82,97,0.35)" : "var(--border)"}`,
+              border:     "1px solid var(--border)",
               borderLeft: `3px solid ${side.color}`,
-              transition: "border-color 0.2s",
             }}
           >
             {/* Top accent */}
@@ -115,22 +95,18 @@ export default function TradeLog({ trades, onDelete }: Props) {
             {/* Delete row */}
             <div className="px-3 py-2.5">
               <button
-                onClick={() => handleDelete(t.id)}
-                className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
-                style={confirming ? {
+                onClick={() => onDelete(t.id)}
+                className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                style={{
                   background: "var(--red-dim)",
                   color: "var(--red)",
-                  border: "1px solid rgba(255,82,97,0.35)",
-                } : {
-                  background: "rgba(255,255,255,0.04)",
-                  color: "var(--muted)",
-                  border: "1px solid var(--border)",
+                  border: "1px solid rgba(255,82,97,0.2)",
                 }}
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                {confirming ? "Tap again to confirm delete" : "Delete"}
+                Delete
               </button>
             </div>
           </div>
