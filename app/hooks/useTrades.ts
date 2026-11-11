@@ -69,7 +69,7 @@ export function useTrades() {
         trade.direction === "long"
           ? (exitPrice - trade.entryPrice) / 0.01
           : (trade.entryPrice - exitPrice) / 0.01;
-      const pnl = parseFloat((pips * 10 * trade.lotSize).toFixed(2));
+      const pnl = parseFloat((pips * 100 * trade.lotSize).toFixed(2));
       supabase.from("trades").update({ exit_price: exitPrice, pnl, status: "closed" }).eq("id", id);
       return prev.map((t) =>
         t.id === id ? { ...t, exitPrice, pnl, status: "closed" as const } : t

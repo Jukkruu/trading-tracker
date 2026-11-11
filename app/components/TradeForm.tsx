@@ -28,7 +28,7 @@ export default function TradeForm({ onAdd, onClose }: Props) {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const pips = direction === "long" ? (exit - entry) / 0.01 : (entry - exit) / 0.01;
-    const pnl  = parseFloat((pips * 10 * lots).toFixed(2));
+    const pnl  = parseFloat((pips * 100 * lots).toFixed(2));
     onAdd({
       date:       new Date().toISOString().slice(0, 10),
       direction,
